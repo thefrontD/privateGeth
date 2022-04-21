@@ -115,6 +115,7 @@ func mustDecodeNode(hash, buf []byte) node {
 
 // decodeNode parses the RLP encoding of a trie node.
 func decodeNode(hash, buf []byte) (node, error) {
+	println("decodeNode")
 	if len(buf) == 0 {
 		return nil, io.ErrUnexpectedEOF
 	}
