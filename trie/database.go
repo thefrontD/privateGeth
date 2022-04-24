@@ -213,6 +213,7 @@ func forGatherChildren(n node, onChild func(hash common.Hash)) {
 // simplifyNode traverses the hierarchy of an expanded memory node and discards
 // all the internal caches, returning a node that only contains the raw data.
 func simplifyNode(n node) node {
+	println("trie.database.simplifyNode") //pglog
 	switch n := n.(type) {
 	case *shortNode:
 		// Short nodes discard the flags and cascade
@@ -321,6 +322,7 @@ func (db *Database) DiskDB() ethdb.KeyValueStore {
 // All nodes inserted by this function will be reference tracked
 // and in theory should only used for **trie nodes** insertion.
 func (db *Database) insert(hash common.Hash, size int, node node) {
+	println("trie.database.insert") //pglog
 	// If the node's already cached, skip
 	if _, ok := db.dirties[hash]; ok {
 		return

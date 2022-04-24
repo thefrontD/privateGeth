@@ -169,6 +169,7 @@ func (c *committer) commitChildren(n *fullNode, db *Database) ([17]node, error) 
 // the key/value pair to it and tracks any node->child references as well as any
 // node->external trie references.
 func (c *committer) store(n node, db *Database) node {
+	println("trie.committer.store") //pglog
 	// Larger nodes are replaced by their hash and stored in the database.
 	var (
 		hash, _ = n.cache()
@@ -205,6 +206,7 @@ func (c *committer) store(n node, db *Database) node {
 
 // commitLoop does the actual insert + leaf callback for nodes.
 func (c *committer) commitLoop(db *Database) {
+	println("trie.committer.commitLoop") //pglog
 	for item := range c.leafCh {
 		var (
 			hash = item.hash
