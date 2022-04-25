@@ -226,13 +226,14 @@ func simplifyNode(n node) node {
 		for i := 0; i < len(node); i++ {
 			if node[i] != nil {
 				h1 := fmt.Sprintf("%01x", i) //pglog
-				fmt.Println(h1)
+				print(string(h1))
 				node[i] = simplifyNode(node[i])
 			}
 		}
 		return node
 
 	case valueNode, hashNode, rawNode:
+		println("*")
 		return n
 
 	default:
