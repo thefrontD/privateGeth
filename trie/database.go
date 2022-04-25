@@ -237,6 +237,31 @@ func simplifyNode(n node) node {
 	}
 }
 
+//pglog
+//dfs 방식으로 옆으로 늘어나는 tree를 그린다
+func logNode(n node) {
+	switch n := n.(type) {
+	case *shortNode:
+		print(string(n.Key))
+		logNode(n.Val)
+		return
+	case *fullNode:
+		for i := 0; i < len(n.Children); i++ {
+			if n.Children[i] != nil {
+				print(i)
+				logNode(n.Children[i])
+			}
+		}
+		return
+	case valueNode, hashNode, rawNode:
+		println("*")
+		return
+	default:
+		println("error:logNode")
+		return
+	}
+}
+
 // expandNode traverses the node hierarchy of a collapsed storage node and converts
 // all fields and keys into expanded memory form.
 func expandNode(hash hashNode, n node) node {
@@ -341,6 +366,8 @@ func (db *Database) insert(hash common.Hash, size int, node node) {
 		}
 	})
 	db.dirties[hash] = entry
+
+	logNode(entry.node) //pglog
 
 	// Update the flush-list endpoints
 	if db.oldest == (common.Hash{}) {
