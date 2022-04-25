@@ -217,6 +217,7 @@ func simplifyNode(n node) node {
 	switch n := n.(type) {
 	case *shortNode:
 		// Short nodes discard the flags and cascade
+		print(string(n.Key)) //pglog
 		return &rawShortNode{Key: n.Key, Val: simplifyNode(n.Val)}
 
 	case *fullNode:
@@ -224,6 +225,8 @@ func simplifyNode(n node) node {
 		node := rawFullNode(n.Children)
 		for i := 0; i < len(node); i++ {
 			if node[i] != nil {
+				h1 := fmt.Sprintf("%01x", i) //pglog
+				fmt.Println(h1)
 				node[i] = simplifyNode(node[i])
 			}
 		}
@@ -366,8 +369,6 @@ func (db *Database) insert(hash common.Hash, size int, node node) {
 		}
 	})
 	db.dirties[hash] = entry
-
-	logNode(entry.node) //pglog
 
 	// Update the flush-list endpoints
 	if db.oldest == (common.Hash{}) {
