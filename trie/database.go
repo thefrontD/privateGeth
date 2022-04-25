@@ -244,8 +244,10 @@ func simplifyNode(n node) node {
 //pglog
 func printbyte(s []byte) {
 	for i := 0; i < len(s); i++ {
-		print(int(s[i] / 16))
-		print(int(s[i] % 16))
+		h1 := fmt.Sprintf("%01x", int(s[i]/16))
+		print(h1)
+		h2 := fmt.Sprintf("%01x", int(s[i]%16))
+		print(h2)
 	}
 }
 
