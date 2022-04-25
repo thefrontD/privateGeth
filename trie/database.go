@@ -213,11 +213,11 @@ func forGatherChildren(n node, onChild func(hash common.Hash)) {
 // simplifyNode traverses the hierarchy of an expanded memory node and discards
 // all the internal caches, returning a node that only contains the raw data.
 func simplifyNode(n node) node {
-	println("trie.database.simplifyNode") //pglog
+	//println("trie.database.simplifyNode") //pglog
 	switch n := n.(type) {
 	case *shortNode:
 		// Short nodes discard the flags and cascade
-		print(string(n.Key)) //pglog
+		printbyte(n.Key) //pglog
 		return &rawShortNode{Key: n.Key, Val: simplifyNode(n.Val)}
 
 	case *fullNode:
@@ -238,6 +238,14 @@ func simplifyNode(n node) node {
 
 	default:
 		panic(fmt.Sprintf("unknown node type: %T", n))
+	}
+}
+
+//pglog
+func printbyte(s []byte) {
+	for i := 0; i < len(s); i++ {
+		print(int(s[i] / 16))
+		print(int(s[i] % 16))
 	}
 }
 
