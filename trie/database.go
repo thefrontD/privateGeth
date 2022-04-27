@@ -91,6 +91,50 @@ type Database struct {
 	lock sync.RWMutex
 }
 
+//pg
+type queue struct {
+	head *qContainer
+	tail *qContainer
+}
+
+//pg
+type qContainer struct {
+	val  node
+	next *qContainer
+}
+
+//pg
+type qMethod interface {
+	push()
+	pop()
+}
+
+//pg
+func (q queue) push(n node) {
+	if q.head != nil {
+		q.tail.next = &qContainer{}
+		q.tail.next.val = n
+		q.tail.next.next = nil
+		q.tail = q.tail.next
+	} else {
+		q.head = &qContainer{}
+		q.head.val = n
+		q.head.next = nil
+		q.tail = q.head
+	}
+}
+
+//pg
+func (q queue) pop() node {
+	if q.head != nil {
+		h := q.head.val
+		q.head = q.head.next
+		return h
+	} else {
+		return nil
+	}
+}
+
 // rawNode is a simple binary blob used to differentiate between collapsed trie
 // nodes and already encoded RLP binary blobs (while at the same time store them
 // in the same cache fields).
@@ -210,30 +254,112 @@ func forGatherChildren(n node, onChild func(hash common.Hash)) {
 	}
 }
 
+//pg
+func simplifyNode(n node) node {
+	q := queue{}
+	fill := queue{}
+	q.head = nil
+	q.tail = nil
+	fill.head = nil
+	fill.tail = nil
+
+	//initialize
+	var rn node
+	var newNode node
+	var popNode node
+	var fillNode node
+	var fullCount int = 17
+	var fullMax int = 17
+
+	switch n := n.(type) {
+	case *shortNode:
+		rn = &rawShortNode{Key: n.Key, Val: nil}
+		fill.push(rn)
+		q.push(n.Val)
+	case *fullNode:
+		rn = rawFullNode(n.Children)
+		fill.push(rn)
+		fmt.Print("initial node is fullnode and num of children is ")
+		fmt.Println(len(n.Children))
+		for i := 0; i < len(n.Children); i++ {
+			q.push(n.Children[i])
+		}
+	default:
+		print("simplifyNode error")
+	}
+	for {
+
+		popNode = q.pop()
+
+		switch pt := popNode.(type) {
+		case *shortNode:
+			newNode = &rawShortNode{Key: pt.Key, Val: pt.Val} //Val is temp value
+			fill.push(newNode)
+			q.push(pt.Val)
+		case *fullNode:
+			newFullNode := rawFullNode(pt.Children) //newnode[i] will be updated
+			fmt.Println(len(pt.Children))
+			fill.push(newNode)
+			for i := 0; i < len(newFullNode); i++ {
+				q.push(pt.Children[i])
+			}
+		case valueNode, hashNode, rawNode:
+			newNode = pt
+		default:
+			//case that children of fullnode is nil
+			newNode = pt
+		}
+
+		switch ft := fillNode.(type) {
+		case *rawShortNode:
+			ft.Val = newNode
+		case *rawFullNode:
+			//assume all full node have 17 children
+			ft[fullCount] = newNode
+			fullCount++
+		default:
+		}
+
+		if fullCount >= fullMax {
+			fillNode = fill.pop()
+			switch ft := fillNode.(type) {
+			case *shortNode:
+			case *fullNode:
+				fullCount = 0
+				fullMax = len(ft.Children)
+			default:
+			}
+		}
+
+		//termination case
+		if q.head == nil {
+			break
+		}
+
+	}
+
+	return rn
+}
+
 // simplifyNode traverses the hierarchy of an expanded memory node and discards
 // all the internal caches, returning a node that only contains the raw data.
-func simplifyNode(n node) node {
-	//println("trie.database.simplifyNode") //pglog
+func simplifyNode1(n node) node {
 	switch n := n.(type) {
 	case *shortNode:
 		// Short nodes discard the flags and cascade
-		printbyte(n.Key) //pglog
-		return &rawShortNode{Key: n.Key, Val: simplifyNode(n.Val)}
+		return &rawShortNode{Key: n.Key, Val: simplifyNode1(n.Val)}
 
 	case *fullNode:
 		// Full nodes discard the flags and cascade
 		node := rawFullNode(n.Children)
 		for i := 0; i < len(node); i++ {
 			if node[i] != nil {
-				h1 := fmt.Sprintf("%01x", i) //pglog
-				print(string(h1))
-				node[i] = simplifyNode(node[i])
+				node[i] = simplifyNode1(node[i])
 			}
 		}
 		return node
 
 	case valueNode, hashNode, rawNode:
-		println("*")
 		return n
 
 	default:
@@ -248,31 +374,6 @@ func printbyte(s []byte) {
 		print(h1)
 		h2 := fmt.Sprintf("%01x", int(s[i]%16))
 		print(h2)
-	}
-}
-
-//pglog
-//dfs 방식으로 옆으로 늘어나는 tree를 그린다
-func logNode(n node) {
-	switch n := n.(type) {
-	case *shortNode:
-		print(string(n.Key))
-		logNode(n.Val)
-		return
-	case *fullNode:
-		for i := 0; i < len(n.Children); i++ {
-			if n.Children[i] != nil {
-				print(i)
-				logNode(n.Children[i])
-			}
-		}
-		return
-	case valueNode, hashNode, rawNode:
-		println("*")
-		return
-	default:
-		println("error:logNode")
-		return
 	}
 }
 
