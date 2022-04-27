@@ -256,6 +256,7 @@ func forGatherChildren(n node, onChild func(hash common.Hash)) {
 
 //pg
 func simplifyNode(n node) node {
+	fmt.Println("simplifyNode called")
 	q := queue{}
 	fill := queue{}
 	q.head = nil
