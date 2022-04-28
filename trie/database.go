@@ -123,8 +123,8 @@ func (q queue) push(n node, parent node, index int) {
 	} else {
 		q.head = &qContainer{}
 		q.head.val = n
-		q.tail.next.parent = parent
-		q.tail.next.index = index
+		q.head.parent = parent
+		q.head.index = index
 		q.head.next = nil
 		q.tail = q.head
 	}
@@ -133,8 +133,11 @@ func (q queue) push(n node, parent node, index int) {
 //pg
 func (q queue) pop() (node, node, int) {
 	if q.head != nil {
+		val := q.head.val
+		parent := q.head.parent
+		index := q.head.index
 		q.head = q.head.next
-		return q.head.val, q.head.parent, q.head.index
+		return val, parent, index
 	} else {
 		return nil, nil, -1
 	}
@@ -273,6 +276,7 @@ func simplifyNode(n node) node {
 	case *shortNode:
 		fmt.Println("simplifyNode initial node is short")
 		rn = &rawShortNode{Key: n.Key, Val: nil}
+		fmt.Println("simplifyNode initial node is short2")
 		q.push(n.Val, rn, -1)
 	case *fullNode:
 		fmt.Println("simplifyNode initial node is full")
