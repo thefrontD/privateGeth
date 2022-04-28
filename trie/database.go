@@ -283,12 +283,16 @@ func simplifyNode(n node) node {
 	default:
 		fmt.Println("simplifyNode error")
 	}
+	fmt.Println("simplifyNode initialize finished")
 	for {
 
+		fmt.Println("simplifyNode loop start")
 		popNode, parentNode, index := q.pop()
 
 		switch pt := popNode.(type) {
 		case *shortNode:
+
+			fmt.Println("simplifyNode --pop shortnode")
 			if node, ok := parentNode.(*rawShortNode); ok {
 				node.Val = &rawShortNode{Key: pt.Key, Val: nil}
 				q.push(pt.Val, node.Val, -1)
@@ -298,6 +302,8 @@ func simplifyNode(n node) node {
 			}
 
 		case *fullNode:
+
+			fmt.Println("simplifyNode --pop fullnode")
 			newFullNode := rawFullNode(pt.Children) //newnode[i] will be updated
 			//fmt.Println(len(pt.Children))
 
