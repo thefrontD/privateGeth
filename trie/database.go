@@ -99,8 +99,10 @@ type queue struct {
 
 //pg
 type qContainer struct {
-	val  node
-	next *qContainer
+	val    node
+	parent node
+	index  int
+	next   *qContainer
 }
 
 //pg
@@ -110,28 +112,31 @@ type qMethod interface {
 }
 
 //pg
-func (q queue) push(n node) {
+func (q queue) push(n node, parent node, index int) {
 	if q.head != nil {
 		q.tail.next = &qContainer{}
 		q.tail.next.val = n
+		q.tail.next.parent = parent
+		q.tail.next.index = index
 		q.tail.next.next = nil
 		q.tail = q.tail.next
 	} else {
 		q.head = &qContainer{}
 		q.head.val = n
+		q.tail.next.parent = parent
+		q.tail.next.index = index
 		q.head.next = nil
 		q.tail = q.head
 	}
 }
 
 //pg
-func (q queue) pop() node {
+func (q queue) pop() (node, node, int) {
 	if q.head != nil {
-		h := q.head.val
 		q.head = q.head.next
-		return h
+		return q.head.val, q.head.parent, q.head.index
 	} else {
-		return nil
+		return nil, nil, -1
 	}
 }
 
@@ -258,78 +263,61 @@ func forGatherChildren(n node, onChild func(hash common.Hash)) {
 func simplifyNode(n node) node {
 	fmt.Println("simplifyNode called")
 	q := queue{}
-	fill := queue{}
 	q.head = nil
 	q.tail = nil
-	fill.head = nil
-	fill.tail = nil
 
 	//initialize
-	var rn node
-	var newNode node
-	var popNode node
-	var fillNode node
-	var fullCount int = 17
-	var fullMax int = 17
+	var rn node //node to return
 
 	switch n := n.(type) {
 	case *shortNode:
 		rn = &rawShortNode{Key: n.Key, Val: nil}
-		fill.push(rn)
-		q.push(n.Val)
+		q.push(n.Val, rn, -1)
 	case *fullNode:
-		rn = rawFullNode(n.Children)
-		fill.push(rn)
-		fmt.Print("initial node is fullnode and num of children is ")
-		fmt.Println(len(n.Children))
-		for i := 0; i < len(n.Children); i++ {
-			q.push(n.Children[i])
+		node := rawFullNode(n.Children)
+		//fmt.Print("initial node is fullnode and num of children is ")
+		//fmt.Println(len(n.Children))
+		for i := 0; i < len(node); i++ {
+			q.push(n.Children[i], node, i)
 		}
 	default:
-		print("simplifyNode error")
+		fmt.Println("simplifyNode error")
 	}
 	for {
 
-		popNode = q.pop()
+		popNode, parentNode, index := q.pop()
 
 		switch pt := popNode.(type) {
 		case *shortNode:
-			newNode = &rawShortNode{Key: pt.Key, Val: pt.Val} //Val is temp value
-			fill.push(newNode)
-			q.push(pt.Val)
+			if node, ok := parentNode.(*rawShortNode); ok {
+				node.Val = &rawShortNode{Key: pt.Key, Val: nil}
+				q.push(pt.Val, node.Val, -1)
+			} else if node, ok := parentNode.(rawFullNode); ok {
+				node[index] = &rawShortNode{Key: pt.Key, Val: nil}
+				q.push(pt.Val, node[index], -1)
+			}
+
 		case *fullNode:
 			newFullNode := rawFullNode(pt.Children) //newnode[i] will be updated
-			fmt.Println(len(pt.Children))
-			fill.push(newNode)
+			//fmt.Println(len(pt.Children))
+
+			if node, ok := parentNode.(*rawShortNode); ok {
+				node.Val = newFullNode
+			} else if node, ok := parentNode.(rawFullNode); ok {
+				node[index] = newFullNode
+			}
 			for i := 0; i < len(newFullNode); i++ {
-				q.push(pt.Children[i])
+				q.push(pt.Children[i], newFullNode, i)
 			}
+
 		case valueNode, hashNode, rawNode:
-			newNode = pt
-		default:
-			//case that children of fullnode is nil
-			newNode = pt
-		}
-
-		switch ft := fillNode.(type) {
-		case *rawShortNode:
-			ft.Val = newNode
-		case *rawFullNode:
-			//assume all full node have 17 children
-			ft[fullCount] = newNode
-			fullCount++
-		default:
-		}
-
-		if fullCount >= fullMax {
-			fillNode = fill.pop()
-			switch ft := fillNode.(type) {
-			case *shortNode:
-			case *fullNode:
-				fullCount = 0
-				fullMax = len(ft.Children)
-			default:
+			if node, ok := parentNode.(*rawShortNode); ok {
+				node.Val = node
+			} else if node, ok := parentNode.(rawFullNode); ok {
+				node[index] = node
 			}
+		default:
+			fmt.Println("simpliftnode error - pop node not classified")
 		}
 
 		//termination case
