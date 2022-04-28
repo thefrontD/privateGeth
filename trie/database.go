@@ -271,9 +271,11 @@ func simplifyNode(n node) node {
 
 	switch n := n.(type) {
 	case *shortNode:
+		fmt.Println("simplifyNode initial node is short")
 		rn = &rawShortNode{Key: n.Key, Val: nil}
 		q.push(n.Val, rn, -1)
 	case *fullNode:
+		fmt.Println("simplifyNode initial node is full")
 		node := rawFullNode(n.Children)
 		//fmt.Print("initial node is fullnode and num of children is ")
 		//fmt.Println(len(n.Children))
