@@ -328,6 +328,9 @@ func simplifyNode(n node) node {
 			} else if node, ok := parentNode.(rawFullNode); ok {
 				node[index] = node
 			}
+		case node:
+			fmt.Println("simple node? ")
+
 		default:
 			fmt.Println("simpliftnode error - pop node not classified")
 		}
