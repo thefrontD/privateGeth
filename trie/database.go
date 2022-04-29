@@ -127,13 +127,17 @@ func (q queue) push(n node, parent node, index int) {
 		q.head = &qContainer{}
 		fmt.Println(q.head)
 		q.head.val = n
+		fmt.Println(n)
 		fmt.Println(q.head.val)
 		q.head.parent = parent
+		fmt.Println(parent)
 		fmt.Println(q.head.parent)
 		q.head.index = index
+		fmt.Println(index)
 		fmt.Println(q.head.index)
 		q.head.next = nil
 		q.tail = q.head
+		fmt.Println(q.head)
 		fmt.Println(q.tail)
 	}
 }
