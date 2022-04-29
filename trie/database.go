@@ -91,62 +91,6 @@ type Database struct {
 	lock sync.RWMutex
 }
 
-//pg
-type queue struct {
-	head *qContainer
-	tail *qContainer
-}
-
-//pg
-type qContainer struct {
-	val    node
-	parent node
-	index  int
-	next   *qContainer
-}
-
-//pg
-type qMethod interface {
-	push()
-	pop()
-}
-
-//pg
-func (q queue) push(ct *qContainer) {
-	if q.head != nil {
-		fmt.Println("queue push success - already exists")
-		q.tail.next = ct
-		fmt.Println(q.tail.next)
-		q.tail.next.next = nil
-		q.tail = q.tail.next
-	} else {
-		fmt.Println("queue push success - empty queue")
-		q.head = ct
-		fmt.Println(q.head)
-		fmt.Println(q.head.val)
-		fmt.Println(q.head.parent)
-		fmt.Println(q.head.index)
-		q.head.next = nil
-		q.tail = q.head
-		fmt.Println(q.tail)
-	}
-}
-
-//pg
-func (q queue) pop() (node, node, int) {
-	if q.head != nil {
-		fmt.Println("queue pop a node")
-		val := q.head.val
-		parent := q.head.parent
-		index := q.head.index
-		q.head = q.head.next
-		return val, parent, index
-	} else {
-		fmt.Println("queue is empty return nil")
-		return nil, nil, -1
-	}
-}
-
 // rawNode is a simple binary blob used to differentiate between collapsed trie
 // nodes and already encoded RLP binary blobs (while at the same time store them
 // in the same cache fields).
@@ -266,91 +210,72 @@ func forGatherChildren(n node, onChild func(hash common.Hash)) {
 	}
 }
 
-//pg
+type Item struct {
+	parentIndex int
+	node        node
+	position    int
+}
+
+//pglist := []Item{}
 func simplifyNode(n node) node {
-	fmt.Println("simplifyNode called")
-	q := queue{}
-	q.head = nil
-	q.tail = nil
+	list := []Item{}
+	curIndex := 0
+	list = append(list, Item{
+		parentIndex: -1,
+		node:        n,
+		position:    -1,
+	})
 
-	//initialize
-	var rn node //node to return
-
-	switch n := n.(type) {
-	case *shortNode:
-		fmt.Println("simplifyNode initial node is short")
-		rn = &rawShortNode{Key: n.Key, Val: nil}
-		fmt.Println("simplifyNode initial node is short2")
-		fmt.Println(n.Val)
-		fmt.Println(rn)
-		q.push(&qContainer{val: n.Val, parent: rn, index: -1})
-		fmt.Println(q.tail)
-		fmt.Println(q.head)
-	case *fullNode:
-		fmt.Println("simplifyNode initial node is full")
-		node := rawFullNode(n.Children)
-		//fmt.Print("initial node is fullnode and num of children is ")
-		//fmt.Println(len(n.Children))
-		for i := 0; i < len(node); i++ {
-			q.push(&qContainer{val: n.Children[i], parent: node, index: i})
-		}
-	default:
-		fmt.Println("simplifyNode error")
-	}
-	fmt.Println("simplifyNode initialize finished")
 	for {
-
-		fmt.Println("simplifyNode loop start")
-		popNode, parentNode, index := q.pop()
-
-		switch pt := popNode.(type) {
-		case *shortNode:
-
-			fmt.Println("simplifyNode --pop shortnode")
-			if node, ok := parentNode.(*rawShortNode); ok {
-				node.Val = &rawShortNode{Key: pt.Key, Val: nil}
-				q.push(&qContainer{val: pt.Val, parent: node.Val, index: -1})
-			} else if node, ok := parentNode.(rawFullNode); ok {
-				node[index] = &rawShortNode{Key: pt.Key, Val: nil}
-				q.push(&qContainer{val: pt.Val, parent: node[index], index: -1})
-			}
-
-		case *fullNode:
-
-			fmt.Println("simplifyNode --pop fullnode")
-			newFullNode := rawFullNode(pt.Children) //newnode[i] will be updated
-			//fmt.Println(len(pt.Children))
-
-			if node, ok := parentNode.(*rawShortNode); ok {
-				node.Val = newFullNode
-			} else if node, ok := parentNode.(rawFullNode); ok {
-				node[index] = newFullNode
-			}
-			for i := 0; i < len(newFullNode); i++ {
-				q.push(&qContainer{val: pt.Children[i], parent: newFullNode, index: i})
-			}
-
-		case valueNode, hashNode, rawNode:
-			if node, ok := parentNode.(*rawShortNode); ok {
-				node.Val = node
-			} else if node, ok := parentNode.(rawFullNode); ok {
-				node[index] = node
-			}
-		case node:
-			fmt.Println("simple node? ")
-
-		default:
-			fmt.Println("simpliftnode error - pop node not classified")
-		}
-
-		//termination case
-		if q.head == nil {
+		if curIndex >= len(list) {
 			break
 		}
 
+		switch node := list[curIndex].node.(type) {
+		case *shortNode:
+			// Short nodes discard the flags and cascade
+			newNode := &rawShortNode{Key: node.Key, Val: nil}
+			list[curIndex].node = newNode
+			list = append(list, Item{
+				parentIndex: curIndex,
+				node:        node.Val,
+				position:    -1,
+			})
+
+		case *fullNode:
+			// Full nodes discard the flags and cascade
+			newNode := rawFullNode(node.Children)
+			list[curIndex].node = newNode
+			for i := 0; i < len(newNode); i++ {
+				if newNode[i] != nil {
+					list = append(list, Item{
+						parentIndex: curIndex,
+						node:        newNode[i],
+						position:    i,
+					})
+				}
+			}
+
+		case valueNode, hashNode, rawNode:
+			if curIndex == 0 {
+				return node
+			}
+			if node, ok := list[list[curIndex].parentIndex].node.(*rawShortNode); ok {
+				node.Val = list[curIndex].node
+				list[list[curIndex].parentIndex].node = node
+			} else if node, ok := list[list[curIndex].parentIndex].node.(rawFullNode); ok {
+				node[list[curIndex].position] = list[curIndex].node
+				list[list[curIndex].parentIndex].node = node
+			}
+
+		default:
+			panic(fmt.Sprintf("unknown node type: %T", n))
+		}
+
+		curIndex += 1
 	}
 
-	return rn
+	return list[0].node
 }
 
 // simplifyNode traverses the hierarchy of an expanded memory node and discards
