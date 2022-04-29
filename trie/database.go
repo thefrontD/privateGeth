@@ -125,19 +125,15 @@ func (q queue) push(n node, parent node, index int) {
 	} else {
 		fmt.Println("queue push success - empty queue")
 		q.head = &qContainer{}
-		fmt.Println(q.head)
+		//fmt.Println(q.head)
 		q.head.val = n
-		fmt.Println(n)
 		fmt.Println(q.head.val)
 		q.head.parent = parent
-		fmt.Println(parent)
 		fmt.Println(q.head.parent)
 		q.head.index = index
-		fmt.Println(index)
 		fmt.Println(q.head.index)
 		q.head.next = nil
 		q.tail = q.head
-		fmt.Println(q.head)
 		fmt.Println(q.tail)
 	}
 }
@@ -291,7 +287,11 @@ func simplifyNode(n node) node {
 		fmt.Println("simplifyNode initial node is short")
 		rn = &rawShortNode{Key: n.Key, Val: nil}
 		fmt.Println("simplifyNode initial node is short2")
+		fmt.Println(n.Val)
+		fmt.Println(rn)
 		q.push(n.Val, rn, -1)
+		fmt.Println(q.tail)
+		fmt.Println(q.head)
 	case *fullNode:
 		fmt.Println("simplifyNode initial node is full")
 		node := rawFullNode(n.Children)
