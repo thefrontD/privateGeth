@@ -217,7 +217,7 @@ type Item struct {
 }
 
 //pglist := []Item{}
-func simplifyNode(n node) node {
+func simplifyNode2(n node) node {
 	list := []Item{}
 	curIndex := 0
 	list = append(list, Item{
@@ -280,18 +280,18 @@ func simplifyNode(n node) node {
 
 // simplifyNode traverses the hierarchy of an expanded memory node and discards
 // all the internal caches, returning a node that only contains the raw data.
-func simplifyNode1(n node) node {
+func simplifyNode(n node) node {
 	switch n := n.(type) {
 	case *shortNode:
 		// Short nodes discard the flags and cascade
-		return &rawShortNode{Key: n.Key, Val: simplifyNode1(n.Val)}
+		return &rawShortNode{Key: n.Key, Val: simplifyNode(n.Val)}
 
 	case *fullNode:
 		// Full nodes discard the flags and cascade
 		node := rawFullNode(n.Children)
 		for i := 0; i < len(node); i++ {
 			if node[i] != nil {
-				node[i] = simplifyNode1(node[i])
+				node[i] = simplifyNode(node[i])
 			}
 		}
 		return node
