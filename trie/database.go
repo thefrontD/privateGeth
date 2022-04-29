@@ -112,17 +112,17 @@ type qMethod interface {
 }
 
 //pg
-func (q queue) push(ct qContainer) {
+func (q queue) push(ct *qContainer) {
 	if q.head != nil {
 		fmt.Println("queue push success - already exists")
-		q.tail.next = &ct
+		q.tail.next = ct
 		fmt.Println(q.tail.next)
 		q.tail.next.next = nil
 		q.tail = q.tail.next
 	} else {
 		fmt.Println("queue push success - empty queue")
-		q.head = &ct
-		//fmt.Println(q.head)
+		q.head = ct
+		fmt.Println(q.head)
 		fmt.Println(q.head.val)
 		fmt.Println(q.head.parent)
 		fmt.Println(q.head.index)
@@ -283,7 +283,7 @@ func simplifyNode(n node) node {
 		fmt.Println("simplifyNode initial node is short2")
 		fmt.Println(n.Val)
 		fmt.Println(rn)
-		q.push(qContainer{val: n.Val, parent: rn, index: -1})
+		q.push(&qContainer{val: n.Val, parent: rn, index: -1})
 		fmt.Println(q.tail)
 		fmt.Println(q.head)
 	case *fullNode:
@@ -292,7 +292,7 @@ func simplifyNode(n node) node {
 		//fmt.Print("initial node is fullnode and num of children is ")
 		//fmt.Println(len(n.Children))
 		for i := 0; i < len(node); i++ {
-			q.push(qContainer{val: n.Children[i], parent: node, index: i})
+			q.push(&qContainer{val: n.Children[i], parent: node, index: i})
 		}
 	default:
 		fmt.Println("simplifyNode error")
@@ -309,10 +309,10 @@ func simplifyNode(n node) node {
 			fmt.Println("simplifyNode --pop shortnode")
 			if node, ok := parentNode.(*rawShortNode); ok {
 				node.Val = &rawShortNode{Key: pt.Key, Val: nil}
-				q.push(qContainer{val: pt.Val, parent: node.Val, index: -1})
+				q.push(&qContainer{val: pt.Val, parent: node.Val, index: -1})
 			} else if node, ok := parentNode.(rawFullNode); ok {
 				node[index] = &rawShortNode{Key: pt.Key, Val: nil}
-				q.push(qContainer{val: pt.Val, parent: node[index], index: -1})
+				q.push(&qContainer{val: pt.Val, parent: node[index], index: -1})
 			}
 
 		case *fullNode:
@@ -327,7 +327,7 @@ func simplifyNode(n node) node {
 				node[index] = newFullNode
 			}
 			for i := 0; i < len(newFullNode); i++ {
-				q.push(qContainer{val: pt.Children[i], parent: newFullNode, index: i})
+				q.push(&qContainer{val: pt.Children[i], parent: newFullNode, index: i})
 			}
 
 		case valueNode, hashNode, rawNode:
