@@ -116,6 +116,7 @@ func (q queue) push(n node, parent node, index int) {
 	if q.head != nil {
 		fmt.Println("queue push success - already exists")
 		q.tail.next = &qContainer{}
+		fmt.Println(q.tail.next)
 		q.tail.next.val = n
 		q.tail.next.parent = parent
 		q.tail.next.index = index
@@ -124,11 +125,16 @@ func (q queue) push(n node, parent node, index int) {
 	} else {
 		fmt.Println("queue push success - empty queue")
 		q.head = &qContainer{}
+		fmt.Println(q.head)
 		q.head.val = n
+		fmt.Println(q.head.val)
 		q.head.parent = parent
+		fmt.Println(q.head.parent)
 		q.head.index = index
+		fmt.Println(q.head.index)
 		q.head.next = nil
 		q.tail = q.head
+		fmt.Println(q.tail)
 	}
 }
 
