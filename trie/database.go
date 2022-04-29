@@ -114,6 +114,7 @@ type qMethod interface {
 //pg
 func (q queue) push(n node, parent node, index int) {
 	if q.head != nil {
+		fmt.Println("queue push success - already exists")
 		q.tail.next = &qContainer{}
 		q.tail.next.val = n
 		q.tail.next.parent = parent
@@ -121,6 +122,7 @@ func (q queue) push(n node, parent node, index int) {
 		q.tail.next.next = nil
 		q.tail = q.tail.next
 	} else {
+		fmt.Println("queue push success - empty queue")
 		q.head = &qContainer{}
 		q.head.val = n
 		q.head.parent = parent
@@ -133,12 +135,14 @@ func (q queue) push(n node, parent node, index int) {
 //pg
 func (q queue) pop() (node, node, int) {
 	if q.head != nil {
+		fmt.Println("queue pop a node")
 		val := q.head.val
 		parent := q.head.parent
 		index := q.head.index
 		q.head = q.head.next
 		return val, parent, index
 	} else {
+		fmt.Println("queue is empty return nil")
 		return nil, nil, -1
 	}
 }
