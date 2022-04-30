@@ -116,19 +116,13 @@ func (q *queue) push(ct *qContainer) {
 	if q.head != nil {
 		fmt.Println("queue push success - already exists")
 		q.tail.next = ct
-		fmt.Println(q.tail.next)
 		q.tail.next.next = nil
 		q.tail = q.tail.next
 	} else {
 		fmt.Println("queue push success - empty queue")
 		q.head = ct
-		fmt.Println(q.head)
-		fmt.Println(q.head.val)
-		fmt.Println(q.head.parent)
-		fmt.Println(q.head.index)
 		q.head.next = nil
 		q.tail = q.head
-		fmt.Println(q.tail)
 	}
 }
 
