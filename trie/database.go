@@ -278,9 +278,8 @@ func simplifyNode(n node) node {
 
 	switch n := n.(type) {
 	case *shortNode:
-		fmt.Println("simplifyNode initial node is short")
 		rn = &rawShortNode{Key: n.Key, Val: nil}
-		fmt.Println("simplifyNode initial node is short2")
+		fmt.Println("simplifyNode initial node is short")
 		fmt.Println(n.Val)
 		fmt.Println(rn)
 		q.push(&qContainer{val: n.Val, parent: rn, index: -1})
@@ -302,7 +301,8 @@ func simplifyNode(n node) node {
 
 		fmt.Println("simplifyNode loop start")
 		popNode, parentNode, index := q.pop()
-
+		fmt.Println(q.head)
+		fmt.Println(q.tail)
 		switch pt := popNode.(type) {
 		case *shortNode:
 
@@ -331,16 +331,18 @@ func simplifyNode(n node) node {
 			}
 
 		case valueNode, hashNode, rawNode:
+			fmt.Println("simplifyNode --pop value/hash/raw node")
+
 			if node, ok := parentNode.(*rawShortNode); ok {
 				node.Val = node
 			} else if node, ok := parentNode.(rawFullNode); ok {
 				node[index] = node
 			}
-		case node:
-			fmt.Println("simple node? ")
+			break
 
 		default:
-			fmt.Println("simpliftnode error - pop node not classified")
+			fmt.Println("simplifynode error - pop node not classified")
+			break
 		}
 
 		//termination case
