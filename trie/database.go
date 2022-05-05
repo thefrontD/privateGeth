@@ -261,8 +261,7 @@ func forGatherChildren(n node, onChild func(hash common.Hash)) {
 }
 
 //pg
-func simplifyNode(n node) node {
-	fmt.Println("simplifyNode called")
+func simplifyNode_bfs(n node) node {
 	q := queue{}
 	q.head = nil
 	q.tail = nil
@@ -341,24 +340,25 @@ func simplifyNode(n node) node {
 		}
 
 	}
+	fmt.Println("simplifynode terminated")
 
 	return rn
 }
 
 // simplifyNode traverses the hierarchy of an expanded memory node and discards
 // all the internal caches, returning a node that only contains the raw data.
-func simplifyNode1(n node) node {
+func simplifyNode(n node) node {
 	switch n := n.(type) {
 	case *shortNode:
 		// Short nodes discard the flags and cascade
-		return &rawShortNode{Key: n.Key, Val: simplifyNode1(n.Val)}
+		return &rawShortNode{Key: n.Key, Val: simplifyNode(n.Val)}
 
 	case *fullNode:
 		// Full nodes discard the flags and cascade
 		node := rawFullNode(n.Children)
 		for i := 0; i < len(node); i++ {
 			if node[i] != nil {
-				node[i] = simplifyNode1(node[i])
+				node[i] = simplifyNode(node[i])
 			}
 		}
 		return node
@@ -368,16 +368,6 @@ func simplifyNode1(n node) node {
 
 	default:
 		panic(fmt.Sprintf("unknown node type: %T", n))
-	}
-}
-
-//pglog
-func printbyte(s []byte) {
-	for i := 0; i < len(s); i++ {
-		h1 := fmt.Sprintf("%01x", int(s[i]/16))
-		print(h1)
-		h2 := fmt.Sprintf("%01x", int(s[i]%16))
-		print(h2)
 	}
 }
 
@@ -466,12 +456,13 @@ func (db *Database) DiskDB() ethdb.KeyValueStore {
 // All nodes inserted by this function will be reference tracked
 // and in theory should only used for **trie nodes** insertion.
 func (db *Database) insert(hash common.Hash, size int, node node) {
-	println("trie.database.insert") //pglog
 	// If the node's already cached, skip
 	if _, ok := db.dirties[hash]; ok {
 		return
 	}
 	memcacheDirtyWriteMeter.Mark(int64(size))
+
+	startTime := time.Now()
 
 	// Create the cached entry for this node
 	entry := &cachedNode{
@@ -479,6 +470,11 @@ func (db *Database) insert(hash common.Hash, size int, node node) {
 		size:      uint16(size),
 		flushPrev: db.newest,
 	}
+	log.Info("[simplifyNode] elapsedTime", "time", time.Since(startTime))
+	startTime = time.Now()
+	//simplifyNode_bfs(node)
+	log.Info("[simplifyNode_bfs] elapsedTime", "time", time.Since(startTime))
+
 	entry.forChilds(func(child common.Hash) {
 		if c := db.dirties[child]; c != nil {
 			c.parents++
