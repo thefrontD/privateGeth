@@ -91,56 +91,6 @@ type Database struct {
 	lock sync.RWMutex
 }
 
-//pg
-type queue struct {
-	head *qContainer
-	tail *qContainer
-}
-
-//pg
-type qContainer struct {
-	val    node
-	parent node
-	index  int
-	next   *qContainer
-}
-
-//pg
-type qMethod interface {
-	push()
-	pop()
-}
-
-//pg
-func (q *queue) push(ct *qContainer) {
-	if q.head != nil {
-		fmt.Println("queue push success - already exists")
-		q.tail.next = ct
-		q.tail.next.next = nil
-		q.tail = q.tail.next
-	} else {
-		fmt.Println("queue push success - empty queue")
-		q.head = ct
-		q.head.next = nil
-		q.tail = q.head
-	}
-}
-
-//pg
-func (q *queue) pop() (node, node, int) {
-	if q.head != nil {
-		fmt.Println("queue pop a node")
-		val := q.head.val
-		parent := q.head.parent
-		index := q.head.index
-		q.head = q.head.next
-		return val, parent, index
-	} else {
-		fmt.Println("queue is empty return nil")
-		return nil, nil, -1
-	}
-}
-
 // rawNode is a simple binary blob used to differentiate between collapsed trie
 // nodes and already encoded RLP binary blobs (while at the same time store them
 // in the same cache fields).
@@ -328,6 +278,56 @@ func simplifyNode_bfs(n node) node {
 }
 
 //pg
+type queue struct {
+	head *qContainer
+	tail *qContainer
+}
+
+//pg
+type qContainer struct {
+	val    node
+	parent node
+	index  int
+	next   *qContainer
+}
+
+//pg
+type qMethod interface {
+	push()
+	pop()
+}
+
+//pg
+func (q queue) push(ct *qContainer) {
+	if q.head != nil {
+		fmt.Println("queue push success - already exists")
+		q.tail.next = ct
+		q.tail.next.next = nil
+		q.tail = q.tail.next
+	} else {
+		fmt.Println("queue push success - empty queue")
+		q.head = ct
+		q.head.next = nil
+		q.tail = q.head
+	}
+}
+
+//pg
+func (q queue) pop() (node, node, int) {
+	if q.head != nil {
+		fmt.Println("queue pop a node")
+		val := q.head.val
+		parent := q.head.parent
+		index := q.head.index
+		q.head = q.head.next
+		return val, parent, index
+	} else {
+		fmt.Println("queue is empty return nil")
+		return nil, nil, -1
+	}
+}
+
+//pg
 func simplifyNode_bfs_2(n node) node {
 	q := queue{}
 	q.head = nil
@@ -338,52 +338,66 @@ func simplifyNode_bfs_2(n node) node {
 
 	switch n := n.(type) {
 	case *shortNode:
-		rn = &rawShortNode{Key: n.Key, Val: nil}
-		//fmt.Println("simplifyNode initial node is short")
+		newnode := &rawShortNode{Key: n.Key, Val: nil}
+		rn = newnode
+		fmt.Println("simplifyNode initial node is short")
 		q.push(&qContainer{val: n.Val, parent: rn, index: -1})
 	case *fullNode:
 		fmt.Println("simplifyNode initial node is full")
-		rn := rawFullNode(n.Children)
+		newnode := rawFullNode(n.Children)
+		rn = newnode
 		//fmt.Print("initial node is fullnode and num of children is ")
 		//fmt.Println(len(n.Children))
-		for i := 0; i < len(rn); i++ {
-			q.push(&qContainer{val: n.Children[i], parent: rn, index: i})
+		for i := 0; i < len(newnode); i++ {
+			if newnode[i] != nil {
+				q.push(&qContainer{val: newnode[i], parent: rn, index: i})
+				fmt.Println("child node pushed", i)
+			}
 		}
 	default:
 		fmt.Println("simplifyNode error")
 	}
 	fmt.Println("simplifyNode initialize finished")
+	fmt.Println("simplifyNode loop start")
 	for {
 
-		fmt.Println("simplifyNode loop start")
+		//termination case
+		if q.head == nil {
+			fmt.Println("simplifynode terminated")
+			break
+		}
+
 		popNode, parentNode, index := q.pop()
-		fmt.Println(q.head)
-		fmt.Println(q.tail)
+		//fmt.Println(q.head)
+		//fmt.Println(q.tail)
 		switch pt := popNode.(type) {
 		case *shortNode:
 
+			newnode := &rawShortNode{Key: pt.Key, Val: nil}
 			fmt.Println("simplifyNode --pop shortnode")
 			if node, ok := parentNode.(*rawShortNode); ok {
-				node.Val = &rawShortNode{Key: pt.Key, Val: nil}
+				node.Val = newnode
 				q.push(&qContainer{val: pt.Val, parent: node.Val, index: -1})
 			} else if node, ok := parentNode.(rawFullNode); ok {
-				node[index] = &rawShortNode{Key: pt.Key, Val: nil}
+				node[index] = newnode
 				q.push(&qContainer{val: pt.Val, parent: node[index], index: -1})
 			}
 
 		case *fullNode:
 
 			fmt.Println("simplifyNode --pop fullnode")
-			newFullNode := rawFullNode(pt.Children) //newnode[i] will be updated
+			newnode := rawFullNode(pt.Children) //newnode[i] will be updated
 			//fmt.Println(len(pt.Children))
 
 			if node, ok := parentNode.(*rawShortNode); ok {
-				node.Val = newFullNode
+				node.Val = newnode
 			} else if node, ok := parentNode.(rawFullNode); ok {
-				node[index] = newFullNode
+				node[index] = newnode
 			}
-			for i := 0; i < len(newFullNode); i++ {
-				q.push(&qContainer{val: pt.Children[i], parent: newFullNode, index: i})
+			for i := 0; i < len(newnode); i++ {
+				if newnode[i] != nil {
+					q.push(&qContainer{val: pt.Children[i], parent: newnode, index: i})
+				}
 			}
 
 		case valueNode, hashNode, rawNode:
@@ -401,13 +415,7 @@ func simplifyNode_bfs_2(n node) node {
 			break
 		}
 
-		//termination case
-		if q.head == nil {
-			break
-		}
-
 	}
-	fmt.Println("simplifynode terminated")
 
 	return rn
 }
@@ -538,9 +546,9 @@ func (db *Database) insert(hash common.Hash, size int, node node) {
 		flushPrev: db.newest,
 	}
 	log.Info("[simplifyNode] elapsedTime", "time", time.Since(startTime))
-	//startTime = time.Now()
-	//simplifyNode_bfs(node)
-	//log.Info("[simplifyNode_bfs] elapsedTime", "time", time.Since(startTime))
+	startTime = time.Now()
+	simplifyNode_bfs(node)
+	log.Info("[simplifyNode_bfs] elapsedTime", "time", time.Since(startTime))
 
 	entry.forChilds(func(child common.Hash) {
 		if c := db.dirties[child]; c != nil {
