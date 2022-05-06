@@ -260,8 +260,75 @@ func forGatherChildren(n node, onChild func(hash common.Hash)) {
 	}
 }
 
-//pg
+type Item struct {
+	parentIndex int
+	node        node
+	position    int
+}
+
 func simplifyNode_bfs(n node) node {
+	list := []Item{}
+	curIndex := 0
+	list = append(list, Item{
+		parentIndex: -1,
+		node:        n,
+		position:    -1,
+	})
+
+	for {
+		if curIndex >= len(list) {
+			break
+		}
+
+		switch node := list[curIndex].node.(type) {
+		case *shortNode:
+			// Short nodes discard the flags and cascade
+			newNode := &rawShortNode{Key: node.Key, Val: nil}
+			list[curIndex].node = newNode
+			list = append(list, Item{
+				parentIndex: curIndex,
+				node:        node.Val,
+				position:    -1,
+			})
+
+		case *fullNode:
+			// Full nodes discard the flags and cascade
+			newNode := rawFullNode(node.Children)
+			list[curIndex].node = newNode
+			for i := 0; i < len(newNode); i++ {
+				if newNode[i] != nil {
+					list = append(list, Item{
+						parentIndex: curIndex,
+						node:        newNode[i],
+						position:    i,
+					})
+				}
+			}
+
+		case valueNode, hashNode, rawNode:
+			if curIndex == 0 {
+				return node
+			}
+			if node, ok := list[list[curIndex].parentIndex].node.(*rawShortNode); ok {
+				node.Val = list[curIndex].node
+				list[list[curIndex].parentIndex].node = node
+			} else if node, ok := list[list[curIndex].parentIndex].node.(rawFullNode); ok {
+				node[list[curIndex].position] = list[curIndex].node
+				list[list[curIndex].parentIndex].node = node
+			}
+
+		default:
+			panic(fmt.Sprintf("unknown node type: %T", n))
+		}
+
+		curIndex += 1
+	}
+
+	return list[0].node
+}
+
+//pg
+func simplifyNode_bfs_2(n node) node {
 	q := queue{}
 	q.head = nil
 	q.tail = nil
@@ -272,15 +339,15 @@ func simplifyNode_bfs(n node) node {
 	switch n := n.(type) {
 	case *shortNode:
 		rn = &rawShortNode{Key: n.Key, Val: nil}
-		fmt.Println("simplifyNode initial node is short")
+		//fmt.Println("simplifyNode initial node is short")
 		q.push(&qContainer{val: n.Val, parent: rn, index: -1})
 	case *fullNode:
 		fmt.Println("simplifyNode initial node is full")
-		node := rawFullNode(n.Children)
+		rn := rawFullNode(n.Children)
 		//fmt.Print("initial node is fullnode and num of children is ")
 		//fmt.Println(len(n.Children))
-		for i := 0; i < len(node); i++ {
-			q.push(&qContainer{val: n.Children[i], parent: node, index: i})
+		for i := 0; i < len(rn); i++ {
+			q.push(&qContainer{val: n.Children[i], parent: rn, index: i})
 		}
 	default:
 		fmt.Println("simplifyNode error")
@@ -471,9 +538,9 @@ func (db *Database) insert(hash common.Hash, size int, node node) {
 		flushPrev: db.newest,
 	}
 	log.Info("[simplifyNode] elapsedTime", "time", time.Since(startTime))
-	startTime = time.Now()
+	//startTime = time.Now()
 	//simplifyNode_bfs(node)
-	log.Info("[simplifyNode_bfs] elapsedTime", "time", time.Since(startTime))
+	//log.Info("[simplifyNode_bfs] elapsedTime", "time", time.Since(startTime))
 
 	entry.forChilds(func(child common.Hash) {
 		if c := db.dirties[child]; c != nil {
