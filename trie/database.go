@@ -410,9 +410,18 @@ func simplifyNode_bfs_2(n node) node {
 				}
 			}
 
-		case valueNode, hashNode, rawNode:
-			log.Info("simplifyNode --pop value/hash/raw node")
+		case valueNode, hashNode:
+			log.Info("simplifyNode --pop value/hash node")
 
+			if node, ok := parentNode.(*rawShortNode); ok {
+				node.Val = node
+			} else if node, ok := parentNode.(rawFullNode); ok {
+				node[index] = node
+			}
+			break
+
+		case rawNode:
+			log.Info("simplifyNode --pop raw node")
 			if node, ok := parentNode.(*rawShortNode); ok {
 				node.Val = node
 			} else if node, ok := parentNode.(rawFullNode); ok {
