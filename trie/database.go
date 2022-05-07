@@ -303,12 +303,18 @@ func (q *queue) push(ct *qContainer) {
 		q.tail.next = ct
 		q.tail.next.next = nil
 		q.tail = q.tail.next
-		fmt.Println("queue push success - already exists current head : ", q.head)
+		if q.head != nil {
+			log.Info("queue push success - already exists ")
+		} else {
+			log.Info("queue push success - already exists current head : nil")
+		}
 	} else {
 		q.head = ct
 		q.head.next = nil
 		q.tail = q.head
-		fmt.Println("queue push success - empty queue current head : ", q.head)
+		if q.head != nil {
+			log.Info("queue push success - empty queue current head : nil")
+		}
 	}
 }
 
@@ -319,7 +325,11 @@ func (q *queue) pop() (node, node, int) {
 		parent := q.head.parent
 		index := q.head.index
 		q.head = q.head.next
-		log.Info("queue pop a node next head :", q.head)
+		if q.head != nil {
+			log.Info("queue pop a node ")
+		} else {
+			log.Info("queue pop a node next head : nil")
+		}
 		return val, parent, index
 	} else {
 		log.Info("queue is empty return nil")
@@ -351,7 +361,7 @@ func simplifyNode_bfs_2(n node) node {
 		for i := 0; i < len(newnode); i++ {
 			if newnode[i] != nil {
 				q.push(&qContainer{val: newnode[i], parent: rn, index: i})
-				log.Info("child node pushed", i)
+				log.Info("child node pushed")
 			}
 		}
 	default:
