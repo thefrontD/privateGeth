@@ -547,7 +547,7 @@ func (db *Database) insert(hash common.Hash, size int, node node) {
 	}
 	log.Info("[simplifyNode] elapsedTime", "time", time.Since(startTime))
 	startTime = time.Now()
-	simplifyNode_bfs(node)
+	simplifyNode_bfs_2(node)
 	log.Info("[simplifyNode_bfs] elapsedTime", "time", time.Since(startTime))
 
 	entry.forChilds(func(child common.Hash) {
