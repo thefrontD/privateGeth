@@ -319,10 +319,10 @@ func (q *queue) pop() (node, node, int) {
 		parent := q.head.parent
 		index := q.head.index
 		q.head = q.head.next
-		fmt.Println("queue pop a node next head :", q.head)
+		log.Info("queue pop a node next head :", q.head)
 		return val, parent, index
 	} else {
-		fmt.Println("queue is empty return nil")
+		log.Info("queue is empty return nil")
 		return nil, nil, -1
 	}
 }
@@ -340,10 +340,10 @@ func simplifyNode_bfs_2(n node) node {
 	case *shortNode:
 		newnode := &rawShortNode{Key: n.Key, Val: nil}
 		rn = newnode
-		fmt.Println("simplifyNode initial node is short")
+		log.Info("simplifyNode initial node is short")
 		q.push(&qContainer{val: n.Val, parent: rn, index: -1})
 	case *fullNode:
-		fmt.Println("simplifyNode initial node is full")
+		log.Info("simplifyNode initial node is full")
 		newnode := rawFullNode(n.Children)
 		rn = newnode
 		//fmt.Print("initial node is fullnode and num of children is ")
@@ -351,19 +351,19 @@ func simplifyNode_bfs_2(n node) node {
 		for i := 0; i < len(newnode); i++ {
 			if newnode[i] != nil {
 				q.push(&qContainer{val: newnode[i], parent: rn, index: i})
-				fmt.Println("child node pushed", i)
+				log.Info("child node pushed", i)
 			}
 		}
 	default:
-		fmt.Println("simplifyNode error")
+		log.Info("simplifyNode error")
 	}
-	fmt.Println("simplifyNode initialize finished")
-	fmt.Println("simplifyNode loop start")
+	log.Info("simplifyNode initialize finished")
+	log.Info("simplifyNode loop start")
 	for {
 
 		//termination case
 		if q.head == nil {
-			fmt.Println("simplifynode terminated")
+			log.Info("simplifynode terminated")
 			break
 		}
 
@@ -374,7 +374,7 @@ func simplifyNode_bfs_2(n node) node {
 		case *shortNode:
 
 			newnode := &rawShortNode{Key: pt.Key, Val: nil}
-			fmt.Println("simplifyNode --pop shortnode")
+			log.Info("simplifyNode --pop shortnode")
 			if node, ok := parentNode.(*rawShortNode); ok {
 				node.Val = newnode
 				q.push(&qContainer{val: pt.Val, parent: node.Val, index: -1})
@@ -385,7 +385,7 @@ func simplifyNode_bfs_2(n node) node {
 
 		case *fullNode:
 
-			fmt.Println("simplifyNode --pop fullnode")
+			log.Info("simplifyNode --pop fullnode")
 			newnode := rawFullNode(pt.Children) //newnode[i] will be updated
 			//fmt.Println(len(pt.Children))
 
@@ -401,7 +401,7 @@ func simplifyNode_bfs_2(n node) node {
 			}
 
 		case valueNode, hashNode, rawNode:
-			fmt.Println("simplifyNode --pop value/hash/raw node")
+			log.Info("simplifyNode --pop value/hash/raw node")
 
 			if node, ok := parentNode.(*rawShortNode); ok {
 				node.Val = node
@@ -411,7 +411,7 @@ func simplifyNode_bfs_2(n node) node {
 			break
 
 		default:
-			fmt.Println("simplifynode error - pop node not classified")
+			log.Info("simplifynode error - pop node not classified")
 			break
 		}
 
