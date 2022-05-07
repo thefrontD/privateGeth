@@ -283,7 +283,7 @@ type queue struct {
 	tail *qContainer
 }
 
-//pg
+//simplifyNode_bfs_2
 type qContainer struct {
 	val    node
 	parent node
@@ -291,45 +291,45 @@ type qContainer struct {
 	next   *qContainer
 }
 
-//pg
 type qMethod interface {
 	push()
 	pop()
 }
 
-//pg
 func (q *queue) push(ct *qContainer) {
 	if q.head != nil {
 		q.tail.next = ct
 		q.tail.next.next = nil
 		q.tail = q.tail.next
-		if q.head != nil {
-			log.Info("queue push success - already exists ")
-		} else {
-			log.Info("queue push success - already exists current head : nil")
-		}
+		/*
+			if q.head != nil {
+				log.Info("queue push success - already exists ")
+			} else {
+				log.Info("queue push success - already exists current head : nil")
+			}*/
 	} else {
 		q.head = ct
 		q.head.next = nil
 		q.tail = q.head
-		if q.head != nil {
+		/*if q.head != nil {
+			log.Info("queue push success - empty queue")
+		} else {
 			log.Info("queue push success - empty queue current head : nil")
-		}
+		}*/
 	}
 }
 
-//pg
 func (q *queue) pop() (node, node, int) {
 	if q.head != nil {
 		val := q.head.val
 		parent := q.head.parent
 		index := q.head.index
 		q.head = q.head.next
-		if q.head != nil {
+		/*if q.head != nil {
 			log.Info("queue pop a node ")
 		} else {
 			log.Info("queue pop a node next head : nil")
-		}
+		}*/
 		return val, parent, index
 	} else {
 		log.Info("queue is empty return nil")
@@ -350,30 +350,28 @@ func simplifyNode_bfs_2(n node) node {
 	case *shortNode:
 		newnode := &rawShortNode{Key: n.Key, Val: nil}
 		rn = newnode
-		log.Info("simplifyNode initial node is short")
+		//log.Info("simplifyNode initial node is short")
 		q.push(&qContainer{val: n.Val, parent: rn, index: -1})
 	case *fullNode:
-		log.Info("simplifyNode initial node is full")
+		//log.Info("simplifyNode initial node is full")
 		newnode := rawFullNode(n.Children)
 		rn = newnode
-		//fmt.Print("initial node is fullnode and num of children is ")
-		//fmt.Println(len(n.Children))
 		for i := 0; i < len(newnode); i++ {
 			if newnode[i] != nil {
 				q.push(&qContainer{val: newnode[i], parent: rn, index: i})
-				log.Info("child node pushed")
+				//log.Info("child node pushed")
 			}
 		}
 	default:
 		log.Info("simplifyNode error")
 	}
-	log.Info("simplifyNode initialize finished")
-	log.Info("simplifyNode loop start")
+	//log.Info("simplifyNode initialize finished")
+	//log.Info("simplifyNode loop start")
 	for {
 
 		//termination case
 		if q.head == nil {
-			log.Info("simplifynode terminated")
+			//log.Info("simplifynode terminated")
 			break
 		}
 
@@ -384,7 +382,7 @@ func simplifyNode_bfs_2(n node) node {
 		case *shortNode:
 
 			newnode := &rawShortNode{Key: pt.Key, Val: nil}
-			log.Info("simplifyNode --pop shortnode")
+			//log.Info("simplifyNode --pop shortnode")
 			if node, ok := parentNode.(*rawShortNode); ok {
 				node.Val = newnode
 				q.push(&qContainer{val: pt.Val, parent: node.Val, index: -1})
@@ -395,9 +393,8 @@ func simplifyNode_bfs_2(n node) node {
 
 		case *fullNode:
 
-			log.Info("simplifyNode --pop fullnode")
-			newnode := rawFullNode(pt.Children) //newnode[i] will be updated
-			//fmt.Println(len(pt.Children))
+			//log.Info("simplifyNode --pop fullnode")
+			newnode := rawFullNode(pt.Children)
 
 			if node, ok := parentNode.(*rawShortNode); ok {
 				node.Val = newnode
@@ -410,18 +407,9 @@ func simplifyNode_bfs_2(n node) node {
 				}
 			}
 
-		case valueNode, hashNode:
-			log.Info("simplifyNode --pop value/hash node")
+		case valueNode, hashNode, rawNode:
+			//log.Info("simplifyNode --pop value/hash node")
 
-			if node, ok := parentNode.(*rawShortNode); ok {
-				node.Val = node
-			} else if node, ok := parentNode.(rawFullNode); ok {
-				node[index] = node
-			}
-			break
-
-		case rawNode:
-			log.Info("simplifyNode --pop raw node")
 			if node, ok := parentNode.(*rawShortNode); ok {
 				node.Val = node
 			} else if node, ok := parentNode.(rawFullNode); ok {
