@@ -298,28 +298,28 @@ type qMethod interface {
 }
 
 //pg
-func (q queue) push(ct *qContainer) {
+func (q *queue) push(ct *qContainer) {
 	if q.head != nil {
-		fmt.Println("queue push success - already exists")
 		q.tail.next = ct
 		q.tail.next.next = nil
 		q.tail = q.tail.next
+		fmt.Println("queue push success - already exists current head : ", q.head)
 	} else {
-		fmt.Println("queue push success - empty queue")
 		q.head = ct
 		q.head.next = nil
 		q.tail = q.head
+		fmt.Println("queue push success - empty queue current head : ", q.head)
 	}
 }
 
 //pg
-func (q queue) pop() (node, node, int) {
+func (q *queue) pop() (node, node, int) {
 	if q.head != nil {
-		fmt.Println("queue pop a node")
 		val := q.head.val
 		parent := q.head.parent
 		index := q.head.index
 		q.head = q.head.next
+		fmt.Println("queue pop a node next head :", q.head)
 		return val, parent, index
 	} else {
 		fmt.Println("queue is empty return nil")
