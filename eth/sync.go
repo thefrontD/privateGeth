@@ -68,7 +68,9 @@ func (pm *ProtocolManager) syncTransactions(p *peer) {
 		for i, tx := range txs {
 			hashes[i] = tx.Hash()
 		}
+		startTime := time.Now()
 		p.AsyncSendPooledTransactionHashes(hashes)
+		log.Info("[AsyncSendPooledTransactionHashes] elapsedTime", "time", time.Since(startTime))
 		return
 	}
 	// Out of luck, peer is running legacy protocols, drop the txs over
