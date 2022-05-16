@@ -624,6 +624,39 @@ func simplifyNode(n node) node {
 	}
 }
 
+func NodeCounter(n node) {
+	shortNum, fullNum, valueNum := nodeCounter(n)
+	fmt.Println("[NodeCounter] Short: ", shortNum, " fullNum: ", fullNum, " valueNum:= ", valueNum)
+}
+
+func nodeCounter(n node) (int, int, int) {
+	switch n := n.(type) {
+	case *shortNode:
+		// Short nodes discard the flags and cascade
+		return nodeCounter(n.Val)
+
+	case *fullNode:
+		// Full nodes discard the flags and cascade
+		node := rawFullNode(n.Children)
+		shortNumTot, fullNumTot, valueNumTot := 0, 0, 0
+		for i := 0; i < len(node); i++ {
+			if node[i] != nil {
+				shortNum, fullNum, valueNum := nodeCounter(node[i])
+				shortNumTot += shortNum
+				fullNumTot += fullNum
+				valueNumTot += valueNum
+			}
+		}
+		return shortNumTot, fullNumTot, valueNumTot
+
+	case valueNode, hashNode, rawNode:
+		return 0, 1, 0
+
+	default:
+		panic(fmt.Sprintf("unknown node type: %T", n))
+	}
+}
+
 // expandNode traverses the node hierarchy of a collapsed storage node and converts
 // all fields and keys into expanded memory form.
 func expandNode(hash hashNode, n node) node {
