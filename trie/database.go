@@ -626,7 +626,7 @@ func simplifyNode(n node) node {
 
 func NodeCounter(n node) {
 	shortNum, fullNum, valueNum := nodeCounter(n)
-	log.Info("[simplifyNode] elapsedTime", "number", shortNum, "number", fullNum, "number", valueNum)
+	log.Info("[NodeCounter] short/full/value", "number", shortNum, "number", fullNum, "number", valueNum)
 }
 
 func nodeCounter(n node) (int, int, int) {

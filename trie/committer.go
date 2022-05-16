@@ -89,7 +89,7 @@ func (c *committer) Commit(n node, db *Database) (hashNode, error) {
 	simplifyNode_iteration_bfs(n)
 	log.Info("[simplifyNode_iteration_bfs] elapsedTime", "time", time.Since(startTime))
 
-	//simplifyNode_iteration_bfs_debug(n)
+	simplifyNode_iteration_bfs_debug(n)
 
 	if db == nil {
 		return nil, errors.New("no db provided")
