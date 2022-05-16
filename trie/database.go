@@ -210,13 +210,112 @@ func forGatherChildren(n node, onChild func(hash common.Hash)) {
 	}
 }
 
+type StackItem struct {
+	parent  *StackItem
+	node    node
+	index   int
+	visited bool
+}
+
+type Stack struct {
+	items []StackItem
+}
+
+func (s *Stack) Push(item StackItem) {
+	s.items = append(s.items, item)
+}
+
+func (s *Stack) Pop() StackItem {
+	dLen := len(s.items)
+	item, items := s.items[dLen-1], s.items[0:dLen-1]
+	s.items = items
+	return item
+}
+
+func simplifyNode_iteration(n node) node {
+	st := &Stack{}
+	st.Push(StackItem{
+		parent:  nil,
+		node:    n,
+		index:   -1,
+		visited: false,
+	})
+
+	for {
+		if len(st.items) == 0 {
+			break
+		}
+		curItem := st.items[len(st.items)-1]
+		if curItem.visited == true {
+			item := st.Pop()
+
+			if item.parent == nil {
+				return item.node
+			}
+
+			if node, ok := (item.parent).node.(*rawShortNode); ok {
+				node.Val = item.node
+			} else if node, ok := (item.parent).node.(rawFullNode); ok {
+				node[item.index] = item.node
+			}
+			continue
+		}
+
+		switch curNode := curItem.node.(type) {
+		case *shortNode:
+			// Short nodes discard the flags and cascade
+			node := &rawShortNode{Key: curNode.Key, Val: nil}
+			st.items[len(st.items)-1].node = node
+			st.items[len(st.items)-1].visited = true
+			st.Push(StackItem{
+				parent:  &st.items[len(st.items)-1],
+				node:    curNode.Val,
+				index:   -1,
+				visited: false,
+			})
+
+		case *fullNode:
+			// Full nodes discard the flags and cascade
+			node := rawFullNode(curNode.Children)
+			st.items[len(st.items)-1].node = node
+			st.items[len(st.items)-1].visited = true
+			for i := 0; i < len(node); i++ {
+				if node[i] != nil {
+					st.Push(StackItem{
+						parent:  &st.items[len(st.items)-1],
+						node:    node[i],
+						index:   i,
+						visited: false,
+					})
+				}
+			}
+
+		case valueNode, hashNode, rawNode:
+			item := st.Pop()
+			if item.parent == nil {
+				return item.node
+			}
+
+			if node, ok := (item.parent).node.(*rawShortNode); ok {
+				node.Val = item.node
+			} else if node, ok := (item.parent).node.(rawFullNode); ok {
+				node[item.index] = item.node
+			}
+
+		default:
+			panic(fmt.Sprintf("unknown node type: %T", n))
+		}
+	}
+	return n
+}
+
 type Item struct {
 	parentIndex int
 	node        node
 	position    int
 }
 
-func simplifyNode_bfs(n node) node {
+func simplifyNode_iteration_bfs(n node) node {
 	list := []Item{}
 	curIndex := 0
 	list = append(list, Item{
@@ -273,6 +372,78 @@ func simplifyNode_bfs(n node) node {
 
 		curIndex += 1
 	}
+
+	return list[0].node
+}
+
+func simplifyNode_iteration_bfs_debug(n node) node {
+	numShortNode := 0
+	numFullNode := 0
+	numValueNode := 0
+
+	list := []Item{}
+	curIndex := 0
+	list = append(list, Item{
+		parentIndex: -1,
+		node:        n,
+		position:    -1,
+	})
+
+	for {
+		if curIndex >= len(list) {
+			break
+		}
+
+		switch node := list[curIndex].node.(type) {
+		case *shortNode:
+			// Short nodes discard the flags and cascade
+			newNode := &rawShortNode{Key: node.Key, Val: nil}
+			list[curIndex].node = newNode
+			list = append(list, Item{
+				parentIndex: curIndex,
+				node:        node.Val,
+				position:    -1,
+			})
+			numShortNode += 1
+
+		case *fullNode:
+			// Full nodes discard the flags and cascade
+			newNode := rawFullNode(node.Children)
+			list[curIndex].node = newNode
+			for i := 0; i < len(newNode); i++ {
+				if newNode[i] != nil {
+					list = append(list, Item{
+						parentIndex: curIndex,
+						node:        newNode[i],
+						position:    i,
+					})
+				}
+			}
+
+			numFullNode += 1
+
+		case valueNode, hashNode, rawNode:
+			if curIndex == 0 {
+				return node
+			}
+			if node, ok := list[list[curIndex].parentIndex].node.(*rawShortNode); ok {
+				node.Val = list[curIndex].node
+				list[list[curIndex].parentIndex].node = node
+			} else if node, ok := list[list[curIndex].parentIndex].node.(rawFullNode); ok {
+				node[list[curIndex].position] = list[curIndex].node
+				list[list[curIndex].parentIndex].node = node
+			}
+
+			numValueNode += 1
+
+		default:
+			panic(fmt.Sprintf("unknown node type: %T", n))
+		}
+
+		curIndex += 1
+	}
+
+	log.Info("[simplifyNodeDebug] number of nodes", "shortNode", numShortNode, "fullNode", numFullNode, "valueNode", numValueNode)
 
 	return list[0].node
 }
@@ -554,8 +725,14 @@ func (db *Database) insert(hash common.Hash, size int, node node) {
 	}
 	log.Info("[simplifyNode] elapsedTime", "time", time.Since(startTime))
 	startTime = time.Now()
-	simplifyNode_bfs_2(node)
-	log.Info("[simplifyNode_bfs] elapsedTime", "time", time.Since(startTime))
+	simplifyNode_iteration_bfs(node)
+	log.Info("[simplifyNode_iteration_bfs] elapsedTime", "time", time.Since(startTime))
+
+	startTime = time.Now()
+	simplifyNode_iteration(node)
+	log.Info("[simplifyNode_iteration] elapsedTime", "time", time.Since(startTime))
+
+	simplifyNode_iteration_bfs_debug(node)
 
 	entry.forChilds(func(child common.Hash) {
 		if c := db.dirties[child]; c != nil {
