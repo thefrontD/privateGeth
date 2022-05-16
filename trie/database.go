@@ -715,23 +715,12 @@ func (db *Database) insert(hash common.Hash, size int, node node) {
 	}
 	memcacheDirtyWriteMeter.Mark(int64(size))
 
-	startTime := time.Now()
-
 	// Create the cached entry for this node
 	entry := &cachedNode{
 		node:      simplifyNode(node),
 		size:      uint16(size),
 		flushPrev: db.newest,
 	}
-	simplifyNode_iteration_bfs_debug(node)
-	log.Info("[simplifyNode] elapsedTime", "time", time.Since(startTime))
-	startTime = time.Now()
-	simplifyNode_iteration_bfs(node)
-	log.Info("[simplifyNode_iteration_bfs] elapsedTime", "time", time.Since(startTime))
-
-	startTime = time.Now()
-	simplifyNode_iteration(node)
-	log.Info("[simplifyNode_iteration] elapsedTime", "time", time.Since(startTime))
 
 	entry.forChilds(func(child common.Hash) {
 		if c := db.dirties[child]; c != nil {
