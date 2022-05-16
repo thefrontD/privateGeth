@@ -96,7 +96,7 @@ func (c *committer) Commit(n node, db *Database) (hashNode, error) {
 	}
 	h, committed, err := c.commit(n, db)
 	// log.Info("[trie>committer.go] commit node", "time", time.Since(startTime))
-	fmt.Println("[Commit] committed nodes: ", committed)
+	log.Info("[Commit] committed: ", "number", committed)
 	if err != nil {
 		return nil, err
 	}
