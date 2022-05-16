@@ -76,7 +76,7 @@ func returnCommitterToPool(h *committer) {
 }
 
 // commit collapses a node down into a hash node and inserts it into the database
-func (c *committer) Commit(n node, db *Database) (hashNode, int, error) {
+func (c *committer) Commit(n node, db *Database) (hashNode, error) {
 
 	NodeCounter(n)
 	startTime := time.Now()
@@ -92,15 +92,15 @@ func (c *committer) Commit(n node, db *Database) (hashNode, int, error) {
 	//simplifyNode_iteration_bfs_debug(n)
 
 	if db == nil {
-		return nil, 0, errors.New("no db provided")
+		return nil, errors.New("no db provided")
 	}
 	h, committed, err := c.commit(n, db)
 	// log.Info("[trie>committer.go] commit node", "time", time.Since(startTime))
 	fmt.Println("[Commit] committed nodes: ", committed)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
-	return h.(hashNode), committed, nil
+	return h.(hashNode), nil
 }
 
 // commit collapses a node down into a hash node and inserts it into the database
