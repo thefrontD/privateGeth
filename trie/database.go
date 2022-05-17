@@ -633,7 +633,8 @@ func nodeCounter(n node) (int, int, int) {
 	switch n := n.(type) {
 	case *shortNode:
 		// Short nodes discard the flags and cascade
-		return nodeCounter(n.Val)
+		shortNumTot, fullNumTot, valueNumTot := nodeCounter(n.Val)
+		return shortNumTot + 1, fullNumTot, valueNumTot
 
 	case *fullNode:
 		// Full nodes discard the flags and cascade
@@ -647,10 +648,10 @@ func nodeCounter(n node) (int, int, int) {
 				valueNumTot += valueNum
 			}
 		}
-		return shortNumTot, fullNumTot, valueNumTot
+		return shortNumTot, fullNumTot + 1, valueNumTot
 
 	case valueNode, hashNode, rawNode:
-		return 0, 1, 0
+		return 0, 0, 1
 
 	default:
 		panic(fmt.Sprintf("unknown node type: %T", n))
